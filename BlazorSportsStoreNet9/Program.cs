@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//builder.Services.AddControllersWithViews();
+//builder.Services.AddRazorPages();
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -55,7 +58,14 @@ else
 
 app.UseHttpsRedirection();
 
+//app.UseStaticFiles();
+//app.MapControllers();
+//app.MapControllerRoute("controllers",
+// "controllers/{controller=Home}/{action=Index}/{id?}");
+//app.MapRazorPages();
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
@@ -64,5 +74,8 @@ app.MapRazorComponents<App>()
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
+
+var context = app.Services.CreateScope().ServiceProvider.GetRequiredService<ApplicationDbContext>();
+SeedData.EnsurePopulated(context);
 
 app.Run();

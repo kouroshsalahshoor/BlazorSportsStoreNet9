@@ -14,3 +14,8 @@
 @using BlazorSportsStoreNet9.Models
 
 @using Microsoft.EntityFrameworkCore
+
+@inherits OwningComponentBase<ApplicationDbContext>
+
+@inject IJSRuntime _js
+@inject NavigationManager _navigationManager

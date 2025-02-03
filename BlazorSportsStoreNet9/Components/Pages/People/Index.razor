@@ -2,7 +2,7 @@
 
 <PageTitle>@_title</PageTitle>
 
-<h1>@_title</h1>
+<h5 class="bg-primary text-white text-center p-2">@_title</h5>
 
 <table class="table table-sm table-bordered table-striped">
     <thead>
@@ -11,40 +11,76 @@
             <th>Name</th>
             <th>Dept</th>
             <th>Location</th>
+            <th class="text-center">
+                <NavLink class="btn btn-sm btn-primary" href="person/create">Create</NavLink>
+            </th>
         </tr>
     </thead>
     <tbody class="table-group-divider">
-        @foreach (var _item in _items ?? Enumerable.Empty<Person>())
+        @foreach (var item in _items ?? Enumerable.Empty<Person>())
         {
-            <tr class="@GetClass(_item?.Location?.City)">
-                <td>@_item?.Id</td>
-                <td>@_item?.Surname, @_item?.Firstname</td>
-                <td>@_item?.Department?.Name</td>
-                <td>@_item?.Location?.City, @_item?.Location?.State</td>
+            <tr class="@getClass(item?.Location?.City)" @key="item!.Id">
+                <td>@item?.Id</td>
+                <td>@item?.Surname, @item?.Firstname</td>
+                <td>@item?.Department?.Name</td>
+                <td>@item?.Location?.City, @item?.Location?.State</td>
+                <td class="text-center">
+                    <NavLink class="btn btn-sm btn-info" href="@getDetailsUrl(item!.Id)">
+                        Details
+                    </NavLink>
+                    <NavLink class="btn btn-sm btn-warning" href="@getUpdateUrl(item!.Id)">
+                        Update
+                    </NavLink>
+                    <button class="btn btn-sm btn-danger"
+                    @onclick="@(() => delete(item!))">
+                        Delete
+                    </button>
+                </td>
             </tr>
         }
     </tbody>
 </table>
 <div class="form-group">
     <label for="city">City</label>
-    <select name="city" class="form-control" @bind="SelectedCity">
-        <option disabled selected value="">Select City</option>
-        @foreach (string city in Cities ?? Enumerable.Empty<string>())
+    <select name="city" class="form-control" @bind="_selectedCity">
+        <option disabled selected value="">Please Select City</option>
+        @foreach (string city in _cities ?? Enumerable.Empty<string>())
         {
-            <option value="@city" selected="@(city == SelectedCity)">
+            <option value="@city" selected="@(city == _selectedCity)">
                 @city
             </option>
         }
     </select>
 </div>
 @code {
-    [Inject]
-    public ApplicationDbContext? _db { get; set; }
+    private ApplicationDbContext? _db => Service;
+    // [Inject]
+    // public ApplicationDbContext? _db { get; set; }
 
     private string _title = "People";
-    public IEnumerable<Person>? _items => _db?.People.Include(p => p.Department).Include(p => p.Location);
-    public IEnumerable<string>? Cities => _db?.Locations.Select(l => l.City);
-    public string SelectedCity { get; set; } = string.Empty;
-    public string GetClass(string? city) => SelectedCity == city ? "table-info" : "";
-    // public string GetClass(string? city) =>    SelectedCity == city ? "bg-info text-white" : "";
+    private IEnumerable<Person>? _items;
+
+    override protected async Task OnInitializedAsync(){
+        await load();
+        _cities = _db?.Locations.Select(l => l.City).ToList();
+    }
+
+    private async Task load() => _items = await _db?.People.Include(p => p.Department).Include(p => p.Location).AsNoTracking().ToListAsync<Person>()!;
+
+    private IEnumerable<string>? _cities;
+    private string _selectedCity { get; set; } = string.Empty;
+    private string getClass(string? city) => _selectedCity == city ? "table-info" : "";
+    // private string getClass(string? city) =>    SelectedCity == city ? "bg-info text-white" : "";
+    private async Task delete(Person p)
+    {
+        if (_db != null)
+        {
+            _db.Remove(p);
+            await _db.SaveChangesAsync();
+            await load();
+        }
+    }
+
+    private string getDetailsUrl(long id) => $"person/{id}";
+    private string getUpdateUrl(long id) => $"person/update/{id}";
 }
